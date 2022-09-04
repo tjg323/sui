@@ -18,6 +18,7 @@ parking_lot = "0.12.1"
 futures = "0.3.23"
 typed-store = "0.1.0"
 chrono = "0.4.0"
+hyper = "0.14.20"
 
 sui-config = { path = "../sui-config" }
 sui-core = { path = "../sui-core" }
@@ -27,6 +28,7 @@ sui-json-rpc = { path = "../sui-json-rpc" }
 sui-telemetry = { path = "../sui-telemetry" }
 sui-types = { path = "../sui-types" }
 sui-quorum-driver = { path = "../sui-quorum-driver" }
+sui-rosetta = { path = "../sui-rosetta" }
 
 telemetry-subscribers = "0.1.0"
 mysten-network = "0.1.0"
