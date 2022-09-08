@@ -40,6 +40,8 @@ pub struct BenchMetrics {
     pub num_submitted: IntCounterVec,
     pub num_in_flight: GaugeVec,
     pub latency_s: HistogramVec,
+    pub validators_in_tx_cert: IntCounterVec,
+    pub validators_in_effects_cert: IntCounterVec,
 }
 
 const LATENCY_SEC_BUCKETS: &[f64] = &[
@@ -82,6 +84,20 @@ impl BenchMetrics {
                 "Total time in seconds to return a response",
                 &["workload"],
                 LATENCY_SEC_BUCKETS.to_vec(),
+                registry,
+            )
+            .unwrap(),
+            validators_in_tx_cert: register_int_counter_vec_with_registry!(
+                "validators_in_tx_cert",
+                "Number of times a validator was included in tx cert",
+                &["validator"],
+                registry,
+            )
+            .unwrap(),
+            validators_in_effects_cert: register_int_counter_vec_with_registry!(
+                "validators_in_effects_cert",
+                "Number of times a validator was included in effects cert",
+                &["validator"],
                 registry,
             )
             .unwrap(),
@@ -168,6 +184,7 @@ impl Driver<()> for BenchDriver {
         aggregator: AuthorityAggregator<NetworkAuthorityClient>,
         registry: &Registry,
     ) -> Result<(), anyhow::Error> {
+        let committee = Arc::new(aggregator.committee.clone());
         let mut tasks = Vec::new();
         let (tx, mut rx) = tokio::sync::mpsc::channel(100);
         let mut bench_workers = vec![];
@@ -182,6 +199,7 @@ impl Driver<()> for BenchDriver {
         let metrics = Arc::new(BenchMetrics::new(registry));
         let barrier = Arc::new(Barrier::new(num_workers as usize));
         for (i, worker) in bench_workers.into_iter().enumerate() {
+            let committee = committee.clone();
             let request_delay_micros = 1_000_000 / worker.target_qps;
             let mut free_pool = worker.payload;
             let tx_cloned = tx.clone();
@@ -244,6 +262,7 @@ impl Driver<()> for BenchDriver {
                                 num_submitted += 1;
                                 metrics_cloned.num_submitted.with_label_values(&[&b.1.get_workload_type().to_string()]).inc();
                                 let metrics_cloned = metrics_cloned.clone();
+                                let committee_cloned = committee.clone();
                                 let start = Instant::now();
                                 let res = qd
                                     .execute_transaction(ExecuteTransactionRequest {
@@ -253,7 +272,7 @@ impl Driver<()> for BenchDriver {
                                     .map(move |res| {
                                         match res {
                                             Ok(ExecuteTransactionResponse::EffectsCert(result)) => {
-                                                let (_, effects) = *result;
+                                                let (cert, effects) = *result;
                                                 let new_version = effects.effects.mutated.iter().find(|(object_ref, _)| {
                                                     object_ref.0 == b.1.get_object_id()
                                                 }).map(|x| x.0).unwrap();
@@ -261,6 +280,8 @@ impl Driver<()> for BenchDriver {
                                                 metrics_cloned.latency_s.with_label_values(&[&b.1.get_workload_type().to_string()]).observe(latency.as_secs_f64());
                                                 metrics_cloned.num_success.with_label_values(&[&b.1.get_workload_type().to_string()]).inc();
                                                 metrics_cloned.num_in_flight.with_label_values(&[&b.1.get_workload_type().to_string()]).dec();
+                                                cert.auth_sign_info.authorities(&committee_cloned).for_each(|name| metrics_cloned.validators_in_tx_cert.with_label_values(&[&name.unwrap().to_string()]).inc());
+                                                effects.auth_signature.authorities(&committee_cloned).for_each(|name| metrics_cloned.validators_in_effects_cert.with_label_values(&[&name.unwrap().to_string()]).inc());
                                                 NextOp::Response(Some((
                                                     latency,
                                                     b.1.make_new_payload(new_version, effects.effects.gas_object.0),
@@ -295,6 +316,7 @@ impl Driver<()> for BenchDriver {
                                 let tx = payload.make_transaction();
                                 let start = Instant::now();
                                 let metrics_cloned = metrics_cloned.clone();
+                                let committee_cloned = committee.clone();
                                 let res = qd
                                     .execute_transaction(ExecuteTransactionRequest {
                                         transaction: tx.clone(),
@@ -303,7 +325,7 @@ impl Driver<()> for BenchDriver {
                                 .map(move |res| {
                                     match res {
                                         Ok(ExecuteTransactionResponse::EffectsCert(result)) => {
-                                            let (_, effects) = *result;
+                                            let (cert, effects) = *result;
                                             let new_version = effects.effects.mutated.iter().find(|(object_ref, _)| {
                                                 object_ref.0 == payload.get_object_id()
                                             }).map(|x| x.0).unwrap();
@@ -311,6 +333,8 @@ impl Driver<()> for BenchDriver {
                                             metrics_cloned.latency_s.with_label_values(&[&payload.get_workload_type().to_string()]).observe(latency.as_secs_f64());
                                             metrics_cloned.num_success.with_label_values(&[&payload.get_workload_type().to_string()]).inc();
                                             metrics_cloned.num_in_flight.with_label_values(&[&payload.get_workload_type().to_string()]).dec();
+                                            cert.auth_sign_info.authorities(&committee_cloned).for_each(|name| metrics_cloned.validators_in_tx_cert.with_label_values(&[&name.unwrap().to_string()]).inc());
+                                            effects.auth_signature.authorities(&committee_cloned).for_each(|name| metrics_cloned.validators_in_effects_cert.with_label_values(&[&name.unwrap().to_string()]).inc());
                                             NextOp::Response(Some((
                                                 latency,
                                                 payload.make_new_payload(new_version, effects.effects.gas_object.0),
