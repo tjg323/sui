@@ -51,7 +51,8 @@ use sui_json_rpc::read_api::FullNodeApi;
 use sui_json_rpc::read_api::ReadApi;
 use sui_json_rpc::ws_server::WsServerHandle;
 use sui_json_rpc::JsonRpcServerBuilder;
-use sui_rosetta::RosettaServer;
+use sui_rosetta::types::SuiEnv;
+use sui_rosetta::RosettaOnlineServer;
 use sui_types::crypto::KeypairTraits;
 
 pub mod admin;
@@ -301,7 +302,12 @@ impl SuiNode {
             .as_ref()
             .and_then(|q| config.rosetta_address.map(|addr| (addr, q)))
             .map(|(addr, q)| {
-                let rosetta = RosettaServer::new(state.clone(), q.clone_quorum_driver(), genesis);
+                let rosetta = RosettaOnlineServer::new(
+                    SuiEnv::LocalNet,
+                    state.clone(),
+                    q.clone_quorum_driver(),
+                    genesis,
+                );
                 rosetta.serve(addr)
             });
 
