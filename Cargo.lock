@@ -6653,6 +6653,7 @@ version = "1.0.85"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e55a28e3aaef9d5ce0506d0a14dbba8054ddc7e499ef522dd8b26859ec9d4a44"
 dependencies = [
+ "indexmap",
  "itoa 1.0.2",
  "ryu",
  "serde 1.0.144",
@@ -7804,6 +7805,7 @@ dependencies = [
  "axum-core",
  "axum-macros",
  "bcs",
+ "clap 3.2.17",
  "hyper",
  "move-core-types",
  "once_cell",
@@ -7819,6 +7821,7 @@ dependencies = [
  "sui-sdk",
  "sui-types",
  "telemetry-subscribers",
+ "tempfile",
  "tokio",
  "tower",
  "tower-http",
