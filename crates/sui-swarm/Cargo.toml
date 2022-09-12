@@ -23,7 +23,6 @@ sui-simulator = { path = "../sui-simulator" }
 sui-types = { path = "../sui-types" }
 
 mysten-network = "0.1.0"
-workspace-hack = { path = "../workspace-hack"}
 
 [dev-dependencies]
 telemetry-subscribers = "0.1.0"

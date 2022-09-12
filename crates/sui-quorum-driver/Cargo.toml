@@ -15,4 +15,3 @@ scopeguard = "1.1"
 
 sui-core = { path = "../sui-core" }
 sui-types = { path = "../sui-types" }
-workspace-hack = { path = "../workspace-hack"}
