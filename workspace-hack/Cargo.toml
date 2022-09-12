@@ -81,8 +81,7 @@ cargo-platform = { version = "0.1", default-features = false }
 cargo_metadata-582f2526e08bb6a0 = { package = "cargo_metadata", version = "0.14" }
 cargo_metadata-3575ec1268b04181 = { package = "cargo_metadata", version = "0.15" }
 cassowary = { version = "0.3", default-features = false }
-cast-6f8ce4dd05d13bba = { package = "cast", version = "0.2", features = ["std"] }
-cast-468e82937335b1c9 = { package = "cast", version = "0.3", default-features = false }
+cast = { version = "0.3", default-features = false }
 cfg-expr = { version = "0.10", features = ["target-lexicon", "targets"] }
 cfg-if-c65f7effa3be6d31 = { package = "cfg-if", version = "0.1", default-features = false }
 cfg-if-dff4ba8e3ae991db = { package = "cfg-if", version = "1", default-features = false }
@@ -236,7 +235,7 @@ im = { version = "15", default-features = false }
 include_dir = { version = "0.7", features = ["glob"] }
 indenter = { version = "0.3" }
 indexmap = { version = "1", default-features = false, features = ["serde", "std"] }
-insta = { version = "1", features = ["__private_legacy_default_serialization", "colors", "console", "json", "pest", "pest_derive", "redactions", "serde", "yaml"] }
+insta = { version = "1", features = ["colors", "console", "json", "pest", "pest_derive", "redactions", "serde", "yaml"] }
 instant = { version = "0.1", default-features = false }
 integer-encoding = { version = "3", default-features = false }
 internment = { version = "0.5", default-features = false, features = ["ahash", "arc", "dashmap", "once_cell"] }
@@ -685,8 +684,7 @@ cargo-platform = { version = "0.1", default-features = false }
 cargo_metadata-582f2526e08bb6a0 = { package = "cargo_metadata", version = "0.14" }
 cargo_metadata-3575ec1268b04181 = { package = "cargo_metadata", version = "0.15" }
 cassowary = { version = "0.3", default-features = false }
-cast-6f8ce4dd05d13bba = { package = "cast", version = "0.2", features = ["std"] }
-cast-468e82937335b1c9 = { package = "cast", version = "0.3", default-features = false }
+cast = { version = "0.3", default-features = false }
 cc = { version = "1", default-features = false, features = ["jobserver", "parallel"] }
 cexpr = { version = "0.6", default-features = false }
 cfg-expr = { version = "0.10", features = ["target-lexicon", "targets"] }
@@ -865,7 +863,7 @@ include_dir = { version = "0.7", features = ["glob"] }
 include_dir_macros = { version = "0.7", default-features = false }
 indenter = { version = "0.3" }
 indexmap = { version = "1", default-features = false, features = ["serde", "std"] }
-insta = { version = "1", features = ["__private_legacy_default_serialization", "colors", "console", "json", "pest", "pest_derive", "redactions", "serde", "yaml"] }
+insta = { version = "1", features = ["colors", "console", "json", "pest", "pest_derive", "redactions", "serde", "yaml"] }
 instant = { version = "0.1", default-features = false }
 integer-encoding = { version = "3", default-features = false }
 internment = { version = "0.5", default-features = false, features = ["ahash", "arc", "dashmap", "once_cell"] }
@@ -1099,7 +1097,6 @@ rustc-demangle = { version = "0.1", default-features = false }
 rustc-hash = { version = "1", features = ["std"] }
 rustc_version-6f8ce4dd05d13bba = { package = "rustc_version", version = "0.2", default-features = false }
 rustc_version-468e82937335b1c9 = { package = "rustc_version", version = "0.3", default-features = false }
-rustc_version-9fbad63c4bcf4a8f = { package = "rustc_version", version = "0.4", default-features = false }
 rusticata-macros = { version = "4", default-features = false }
 rustls = { version = "0.20", features = ["dangerous_configuration", "log", "logging", "quic", "tls12"] }
 rustls-native-certs = { version = "0.6", default-features = false }

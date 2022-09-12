@@ -32,13 +32,13 @@ mysten-network = "0.1.0"
 prometheus = "0.13.2"
 
 store = { version = "0.1.0", package = "typed-store" }
-workspace-hack = { version = "0.1", path = "../workspace-hack" }
+workspace-hack = { version = "0.1", path = "../../workspace-hack" }
 
 [dev-dependencies]
 arc-swap = { version = "1.5.1", features = ["serde"] }
 rand = "0.8.5"
 tempfile = "3.3.0"
-test_utils = { path = "../test_utils" }
+test_utils = { path = "../narwhal-test-utils", package = "narwhal-test-utils" }
 
 [features]
 benchmark = []

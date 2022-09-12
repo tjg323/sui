@@ -43,6 +43,7 @@ sui-json-rpc-types = { path = "../sui-json-rpc-types" }
 move-core-types = { git = "https://github.com/move-language/move", rev = "e1e647b73dbd3652aabb2020728a4a517c26e28e", features = ["address20"] }
 narwhal-node = { git = "https://github.com/MystenLabs/narwhal", rev = "2b77ef805c9bce0af4d74477dd922d150d31cb16", package = "node" }
 test-utils = { path = "../test-utils" }
+workspace-hack = { path = "../../workspace-hack"}
 
 [target.'cfg(not(target_env = "msvc"))'.dependencies]
 jemallocator = { version = "^0.5", features = ["profiling"] }
