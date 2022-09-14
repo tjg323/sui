@@ -1,6 +1,7 @@
 // Copyright (c) 2022, Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
+import { Coin as CoinSDK, COIN_DENOMINATIONS } from '@mysten/sui.js';
 import { Formik } from 'formik';
 import { useCallback, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
@@ -17,13 +18,9 @@ import PageTitle from '_app/shared/page-title';
 import Loading from '_components/loading';
 import ProgressBar from '_components/progress-bar';
 import { useAppSelector, useAppDispatch } from '_hooks';
-import {
-    accountAggregateBalancesSelector,
-    accountItemizedBalancesSelector,
-} from '_redux/slices/account';
+import { accountAggregateBalancesSelector } from '_redux/slices/account';
 import { Coin, GAS_TYPE_ARG } from '_redux/slices/sui-objects/Coin';
 import { sendTokens } from '_redux/slices/transactions';
-import { balanceFormatOptions } from '_shared/formatting';
 
 import type { SerializedError } from '@reduxjs/toolkit';
 import type { FormikHelpers } from 'formik';
@@ -43,16 +40,19 @@ const DEFAULT_FORM_STEP = 1;
 function TransferCoinPage() {
     const [searchParams] = useSearchParams();
     const coinType = searchParams.get('type');
+    // TODO: this should be provided from the input component
+    const coinInputDenomination = useMemo(
+        () =>
+            coinType === GAS_TYPE_ARG
+                ? COIN_DENOMINATIONS[GAS_TYPE_ARG]['SUI']
+                : 1,
+        [coinType]
+    );
 
-    const balances = useAppSelector(accountItemizedBalancesSelector);
     const aggregateBalances = useAppSelector(accountAggregateBalancesSelector);
     const coinBalance = useMemo(
         () => (coinType && aggregateBalances[coinType]) || BigInt(0),
         [coinType, aggregateBalances]
-    );
-    const totalGasCoins = useMemo(
-        () => balances[GAS_TYPE_ARG]?.length || 0,
-        [balances]
     );
 
     const gasAggregateBalance = useMemo(
@@ -75,20 +75,10 @@ function TransferCoinPage() {
             createValidationSchemaStepOne(
                 coinType || '',
                 coinBalance,
-                coinSymbol,
                 gasAggregateBalance,
-                totalGasCoins,
-                intl,
-                balanceFormatOptions
+                intl
             ),
-        [
-            coinType,
-            coinBalance,
-            coinSymbol,
-            gasAggregateBalance,
-            totalGasCoins,
-            intl,
-        ]
+        [coinType, coinBalance, gasAggregateBalance, intl]
     );
     const validationSchemaStepTwo = useMemo(
         () => createValidationSchemaStepTwo(),
@@ -109,7 +99,10 @@ function TransferCoinPage() {
             try {
                 const response = await dispatch(
                     sendTokens({
-                        amount: BigInt(amount),
+                        amount: CoinSDK.fromInput(
+                            amount,
+                            coinInputDenomination
+                        ),
                         recipientAddress: to,
                         tokenTypeArg: coinType,
                     })
@@ -126,14 +119,11 @@ function TransferCoinPage() {
                 setSendError((e as SerializedError).message || null);
             }
         },
-        [dispatch, navigate, coinType]
+        [dispatch, navigate, coinType, coinInputDenomination]
     );
 
     const handleNextStep = useCallback(
-        (
-            { amount }: FormValues,
-            { setSubmitting, setFieldValue }: FormikHelpers<FormValues>
-        ) => {
+        (_: FormValues, { setSubmitting }: FormikHelpers<FormValues>) => {
             setCurrentStep((prev) => prev + 1);
             setSubmitting(false);
         },
@@ -181,8 +171,6 @@ function TransferCoinPage() {
         >
             <StepTwo
                 submitError={sendError}
-                coinBalance={coinBalance.toString()}
-                coinSymbol={coinSymbol}
                 coinType={coinType}
                 onClearSubmitError={handleOnClearSubmitError}
             />

@@ -1,13 +1,12 @@
 // Copyright (c) 2022, Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
+import { Coin } from '@mysten/sui.js';
 import cl from 'classnames';
 import { memo, useMemo } from 'react';
 import { useIntl } from 'react-intl';
 
 import { useMiddleEllipsis } from '_hooks';
-import { Coin } from '_redux/slices/sui-objects/Coin';
-import { balanceFormatOptions } from '_shared/formatting';
 
 import st from './CoinBalance.module.scss';
 
@@ -19,13 +18,15 @@ export type CoinProps = {
 };
 
 function CoinBalance({ type, balance, mode = 'row-item' }: CoinProps) {
-    const symbol = useMemo(() => Coin.getCoinSymbol(type), [type]);
     const intl = useIntl();
-    const balanceFormatted = useMemo(
-        () => intl.formatNumber(balance, balanceFormatOptions),
-        [intl, balance]
+    const { value, formatOptions, symbol } = useMemo(
+        () => Coin.getFormatData(balance, type, 'accurate'),
+        [balance, type]
     );
-
+    const balanceFormatted = useMemo(
+        () => intl.formatNumber(value, formatOptions),
+        [intl, value, formatOptions]
+    );
     const shortenType = useMiddleEllipsis(type, 30);
     return (
         <div className={cl(st.container, st[mode])}>

@@ -1,8 +1,9 @@
 // Copyright (c) 2022, Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
+import { Coin } from '@mysten/sui.js';
 import { ErrorMessage, Field, Form, useFormikContext } from 'formik';
-import { useEffect, useRef, memo } from 'react';
+import { useEffect, useRef, memo, useMemo } from 'react';
 import { useIntl } from 'react-intl';
 
 import Alert from '_components/alert';
@@ -10,9 +11,8 @@ import LoadingIndicator from '_components/loading/LoadingIndicator';
 import NumberInput from '_components/number-input';
 import {
     DEFAULT_GAS_BUDGET_FOR_STAKE,
-    GAS_SYMBOL,
+    GAS_TYPE_ARG,
 } from '_redux/slices/sui-objects/Coin';
-import { balanceFormatOptions } from '_shared/formatting';
 
 import type { FormValues } from '.';
 
@@ -21,16 +21,22 @@ import st from './StakeForm.module.scss';
 export type StakeFromProps = {
     submitError: string | null;
     // TODO(ggao): remove this if needed
-    coinBalance: string;
-    coinSymbol: string;
+    coinBalance: bigint;
+    coinTypeArg: string;
     onClearSubmitError: () => void;
 };
+
+const gasCostFormatData = Coin.getFormatData(
+    BigInt(DEFAULT_GAS_BUDGET_FOR_STAKE),
+    GAS_TYPE_ARG,
+    'accurate'
+);
 
 function StakeForm({
     submitError,
     // TODO(ggao): remove this if needed
     coinBalance,
-    coinSymbol,
+    coinTypeArg,
     onClearSubmitError,
 }: StakeFromProps) {
     const {
@@ -45,6 +51,15 @@ function StakeForm({
         onClearRef.current();
     }, [amount]);
     const intl = useIntl();
+    const balanceFormatData = Coin.getFormatData(
+        coinBalance,
+        coinTypeArg,
+        'accurate'
+    );
+    const coinSymbol = useMemo(
+        () => Coin.getCoinSymbol(coinTypeArg),
+        [coinTypeArg]
+    );
     return (
         <Form className={st.container} autoComplete="off" noValidate={true}>
             <div className={st.group}>
@@ -55,14 +70,15 @@ function StakeForm({
                     name="amount"
                     placeholder={`Total ${coinSymbol.toLocaleUpperCase()} to stake`}
                     className={st.input}
+                    decimals={true}
                 />
                 <div className={st.muted}>
                     Available balance:{' '}
                     {intl.formatNumber(
-                        BigInt(coinBalance),
-                        balanceFormatOptions
+                        balanceFormatData.value,
+                        balanceFormatData.formatOptions
                     )}{' '}
-                    {coinSymbol}
+                    {balanceFormatData.symbol}
                 </div>
                 <ErrorMessage
                     className={st.error}
@@ -72,7 +88,11 @@ function StakeForm({
             </div>
             <div className={st.group}>
                 * Total transaction fee estimate (gas cost):{' '}
-                {DEFAULT_GAS_BUDGET_FOR_STAKE} {GAS_SYMBOL}
+                {intl.formatNumber(
+                    gasCostFormatData.value,
+                    gasCostFormatData.formatOptions
+                )}{' '}
+                {gasCostFormatData.symbol}
             </div>
             {submitError ? (
                 <div className={st.group}>

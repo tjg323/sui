@@ -1,7 +1,9 @@
 // Copyright (c) 2022, Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
+import { Coin } from '@mysten/sui.js';
 import cl from 'classnames';
+import { useMemo } from 'react';
 import { useIntl } from 'react-intl';
 
 import ExplorerLink from '_components/explorer-link';
@@ -9,8 +11,7 @@ import { ExplorerLinkType } from '_components/explorer-link/ExplorerLinkType';
 import Icon, { SuiIcons } from '_components/icon';
 import { formatDate } from '_helpers';
 import { useFileExtentionType } from '_hooks';
-import { GAS_SYMBOL } from '_redux/slices/sui-objects/Coin';
-import { balanceFormatOptions } from '_shared/formatting';
+import { GAS_TYPE_ARG } from '_redux/slices/sui-objects/Coin';
 
 import type { TxResultState } from '_redux/slices/txresults';
 
@@ -92,19 +93,44 @@ function ReceiptCard({ tranferType, txDigest }: TxResponseProps) {
     const statusClassName =
         txDigest.status === 'success' ? st.success : st.failed;
 
+    const { amount: txAmount, txGas } = txDigest;
+    const txDigestAmountFormatData = useMemo(
+        // XXX: it seems that we only support SUI, what happens if we send another coin?
+        () =>
+            txAmount
+                ? Coin.getFormatData(BigInt(txAmount), GAS_TYPE_ARG, 'accurate')
+                : null,
+        [txAmount]
+    );
+    const gasFormatData = useMemo(
+        () => Coin.getFormatData(BigInt(txGas), GAS_TYPE_ARG, 'accurate'),
+        [txGas]
+    );
+    // XXX: same as above this only works when the transferred coin was SUI
+    const totalFormatData = useMemo(
+        () =>
+            txAmount
+                ? Coin.getFormatData(
+                      BigInt(txAmount) + BigInt(txGas),
+                      GAS_TYPE_ARG,
+                      'accurate'
+                  )
+                : null,
+        [txAmount, txGas]
+    );
     return (
         <>
             <div className={st.txnResponse}>
                 {txDigest.status === 'success' ? SuccessCard : failedCard}
                 <div className={st.responseCard}>
                     {AssetCard}
-                    {txDigest.amount && (
+                    {txDigestAmountFormatData && (
                         <div className={st.amount}>
                             {intl.formatNumber(
-                                BigInt(txDigest.amount || 0),
-                                balanceFormatOptions
+                                txDigestAmountFormatData.value,
+                                txDigestAmountFormatData.formatOptions
                             )}{' '}
-                            <span>{GAS_SYMBOL}</span>
+                            <span>{txDigestAmountFormatData.symbol}</span>
                         </div>
                     )}
                     <div
@@ -127,22 +153,24 @@ function ReceiptCard({ tranferType, txDigest }: TxResponseProps) {
                         <div className={st.txFees}>
                             <div className={st.txInfoLabel}>Gas Fee</div>
                             <div className={st.walletInfoValue}>
-                                {txDigest.txGas} {GAS_SYMBOL}
+                                {intl.formatNumber(
+                                    gasFormatData.value,
+                                    gasFormatData.formatOptions
+                                )}{' '}
+                                {gasFormatData.symbol}
                             </div>
                         </div>
                     )}
 
-                    {txDigest.amount && (
+                    {totalFormatData && (
                         <div className={st.txFees}>
                             <div className={st.txInfoLabel}>Total Amount</div>
                             <div className={st.walletInfoValue}>
                                 {intl.formatNumber(
-                                    BigInt(
-                                        txDigest.amount + txDigest.txGas || 0
-                                    ),
-                                    balanceFormatOptions
+                                    totalFormatData.value,
+                                    totalFormatData.formatOptions
                                 )}{' '}
-                                {GAS_SYMBOL}
+                                {totalFormatData.symbol}
                             </div>
                         </div>
                     )}

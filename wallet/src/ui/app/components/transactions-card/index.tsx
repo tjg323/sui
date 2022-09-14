@@ -1,16 +1,16 @@
 // Copyright (c) 2022, Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
+import { Coin } from '@mysten/sui.js';
 import cl from 'classnames';
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import { useIntl } from 'react-intl';
 import { Link } from 'react-router-dom';
 
 import Icon, { SuiIcons } from '_components/icon';
 import { formatDate } from '_helpers';
 import { useMiddleEllipsis } from '_hooks';
-import { GAS_SYMBOL } from '_redux/slices/sui-objects/Coin';
-import { balanceFormatOptions } from '_shared/formatting';
+import { GAS_TYPE_ARG } from '_redux/slices/sui-objects/Coin';
 
 import type { TxResultState } from '_redux/slices/txresults';
 
@@ -50,6 +50,15 @@ function TransactionCard({ txn }: { txn: TxResultState }) {
               // 'minute',
           ])
         : false;
+    const txAmount = txn.amount;
+    // XXX: supports only SUI - it seems we always assume the type of the amount of a tx is SUI
+    const txAmountFormatData = useMemo(
+        () =>
+            txAmount
+                ? Coin.getFormatData(BigInt(txAmount), GAS_TYPE_ARG, 'loose')
+                : null,
+        [txAmount]
+    );
 
     return (
         <Link
@@ -91,14 +100,14 @@ function TransactionCard({ txn }: { txn: TxResultState }) {
                     </div>
                 </div>
                 <div className={st.txTransferred}>
-                    {txn.amount && (
+                    {txAmountFormatData && (
                         <>
                             <div className={st.txAmount}>
                                 {intl.formatNumber(
-                                    BigInt(txn.amount || 0),
-                                    balanceFormatOptions
+                                    txAmountFormatData.value,
+                                    txAmountFormatData.formatOptions
                                 )}{' '}
-                                {GAS_SYMBOL}
+                                {txAmountFormatData.symbol}
                             </div>
                             <div className={st.txFiatValue}></div>
                         </>

@@ -1,9 +1,10 @@
 // Copyright (c) 2022, Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
+import { Coin, COIN_DENOMINATIONS } from '@mysten/sui.js';
 import cl from 'classnames';
 import { Field, Form, useFormikContext } from 'formik';
-import { useEffect, useRef, memo } from 'react';
+import { useEffect, useRef, memo, useMemo } from 'react';
 import { useIntl } from 'react-intl';
 
 import { Content, Menu } from '_app/shared/bottom-menu-layout';
@@ -11,25 +12,29 @@ import Button from '_app/shared/button';
 import AddressInput from '_components/address-input';
 import Icon, { SuiIcons } from '_components/icon';
 import LoadingIndicator from '_components/loading/LoadingIndicator';
-import { DEFAULT_GAS_BUDGET_FOR_TRANSFER } from '_redux/slices/sui-objects/Coin';
-import { balanceFormatOptions } from '_shared/formatting';
+import {
+    DEFAULT_GAS_BUDGET_FOR_TRANSFER,
+    GAS_TYPE_ARG,
+} from '_redux/slices/sui-objects/Coin';
 
-import type { FormValues } from '../';
+import type { FormValues } from '_pages/home/transfer-coin';
 
 import st from './TransferCoinForm.module.scss';
 
+const gasCostFormatData = Coin.getFormatData(
+    BigInt(DEFAULT_GAS_BUDGET_FOR_TRANSFER),
+    GAS_TYPE_ARG,
+    'accurate'
+);
+
 export type TransferCoinFormProps = {
     submitError: string | null;
-    coinBalance: string;
-    coinSymbol: string;
     coinType: string;
     onClearSubmitError: () => void;
 };
 
 function StepTwo({
     submitError,
-    coinBalance,
-    coinSymbol,
     coinType,
     onClearSubmitError,
 }: TransferCoinFormProps) {
@@ -38,18 +43,33 @@ function StepTwo({
         isValid,
         values: { amount, to },
     } = useFormikContext<FormValues>();
-
     const intl = useIntl();
-
     const onClearRef = useRef(onClearSubmitError);
     onClearRef.current = onClearSubmitError;
-
     useEffect(() => {
         onClearRef.current();
     }, [amount, to]);
-
-    const totalAmount = parseFloat(amount) + DEFAULT_GAS_BUDGET_FOR_TRANSFER;
-
+    // TODO: this should be provided from the input component
+    const coinInputDenomination = useMemo(
+        () =>
+            coinType === GAS_TYPE_ARG
+                ? COIN_DENOMINATIONS[GAS_TYPE_ARG]['SUI']
+                : 1,
+        [coinType]
+    );
+    const amountValue = useMemo(
+        () => Coin.fromInput(amount, coinInputDenomination),
+        [amount, coinInputDenomination]
+    );
+    const amountFormatData = useMemo(
+        () => Coin.getFormatData(amountValue, coinType, 'accurate'),
+        [amountValue, coinType]
+    );
+    const totalAmount = amountValue + BigInt(DEFAULT_GAS_BUDGET_FOR_TRANSFER);
+    const totalAmountFormatData = useMemo(
+        () => Coin.getFormatData(totalAmount, coinType, 'accurate'),
+        [totalAmount, coinType]
+    );
     const validAddressBtn = !isValid || to === '' || isSubmitting;
 
     return (
@@ -74,17 +94,21 @@ function StepTwo({
                 <div className={st.responseCard}>
                     <div className={st.amount}>
                         {intl.formatNumber(
-                            BigInt(amount || 0),
-                            balanceFormatOptions
+                            amountFormatData.value,
+                            amountFormatData.formatOptions
                         )}{' '}
-                        <span>{coinSymbol}</span>
+                        <span>{amountFormatData.symbol}</span>
                     </div>
 
                     <div className={st.details}>
                         <div className={st.txFees}>
                             <div className={st.txInfoLabel}>Gas Fee</div>
                             <div className={st.walletInfoValue}>
-                                {DEFAULT_GAS_BUDGET_FOR_TRANSFER} {coinSymbol}
+                                {intl.formatNumber(
+                                    gasCostFormatData.value,
+                                    gasCostFormatData.formatOptions
+                                )}{' '}
+                                {gasCostFormatData.symbol}
                             </div>
                         </div>
 
@@ -92,10 +116,10 @@ function StepTwo({
                             <div className={st.txInfoLabel}>Total Amount</div>
                             <div className={st.walletInfoValue}>
                                 {intl.formatNumber(
-                                    BigInt(totalAmount || 0),
-                                    balanceFormatOptions
+                                    totalAmountFormatData.value,
+                                    totalAmountFormatData.formatOptions
                                 )}{' '}
-                                {coinSymbol}
+                                {totalAmountFormatData.symbol}
                             </div>
                         </div>
                     </div>
