@@ -176,7 +176,6 @@ pub async fn create_and_register_new_validator(
 
 pub fn get_new_validator() -> (ValidatorInfo, AuthoritySignature) {
     let keypair: AuthorityKeyPair = get_key_pair().1;
-    let worker_keypair: AuthorityKeyPair = get_key_pair().1;
     let network_keypair: AccountKeyPair = get_key_pair().1;
     let account_keypair = test_account_keys().pop().unwrap().1;
     let pop = generate_proof_of_possession(&keypair, account_keypair.public().into());
@@ -184,7 +183,6 @@ pub fn get_new_validator() -> (ValidatorInfo, AuthoritySignature) {
         ValidatorInfo {
             name: "".to_string(),
             protocol_key: keypair.public().into(),
-            worker_key: worker_keypair.public().into(),
             account_key: account_keypair.public().clone().into(),
             network_key: network_keypair.public().clone().into(),
             stake: 1,

@@ -18,7 +18,6 @@ use sui_adapter::in_memory_storage::InMemoryStorage;
 use sui_adapter::temporary_store::{InnerTemporaryStore, TemporaryStore};
 use sui_types::base_types::ObjectID;
 use sui_types::base_types::TransactionDigest;
-use sui_types::crypto::ToFromBytes;
 use sui_types::crypto::{AuthorityPublicKeyBytes, AuthoritySignature};
 use sui_types::gas::SuiGasStatus;
 use sui_types::messages::CallArg;
@@ -71,7 +70,9 @@ impl Genesis {
                 // Strong requirement here for narwhal and sui to be on the same version of fastcrypto
                 // for AuthorityPublicBytes to cast to type alias PublicKey defined in narwhal to
                 // construct narwhal Committee struct.
-                let name = narwhal_crypto::PublicKey::from_bytes(validator.protocol_key().as_ref())
+                let name = validator
+                    .protocol_key()
+                    .try_into()
                     .expect("Can't get narwhal public key");
                 let primary = narwhal_config::PrimaryAddresses {
                     primary_to_primary: validator.narwhal_primary_to_primary.clone(),
@@ -96,15 +97,13 @@ impl Genesis {
             .validator_set
             .iter()
             .map(|validator| {
-                let name = narwhal_crypto::PublicKey::from_bytes(validator.protocol_key().as_ref())
+                let name = validator
+                    .protocol_key()
+                    .try_into()
                     .expect("Can't get narwhal public key");
                 let workers = [(
                     0, // worker_id
                     narwhal_config::WorkerInfo {
-                        name: validator
-                            .worker_key()
-                            .try_into()
-                            .expect("Can't get narwhal worker public key"),
                         primary_to_worker: validator.narwhal_primary_to_worker.clone(),
                         transactions: validator.narwhal_consensus_address.clone(),
                         worker_to_worker: validator.narwhal_worker_to_worker.clone(),
@@ -619,13 +618,11 @@ mod test {
             .unwrap();
 
         let key: AuthorityKeyPair = get_key_pair_from_rng(&mut rand::rngs::OsRng).1;
-        let worker_key: AuthorityKeyPair = get_key_pair_from_rng(&mut rand::rngs::OsRng).1;
         let account_key: AccountKeyPair = get_key_pair_from_rng(&mut rand::rngs::OsRng).1;
         let network_key: AccountKeyPair = get_key_pair_from_rng(&mut rand::rngs::OsRng).1;
         let validator = ValidatorInfo {
             name: "0".into(),
             protocol_key: key.public().into(),
-            worker_key: worker_key.public().into(),
             account_key: account_key.public().clone().into(),
             network_key: network_key.public().clone().into(),
             stake: 1,
