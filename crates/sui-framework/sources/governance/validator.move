@@ -13,7 +13,7 @@ module sui::validator {
     use sui::stake::Stake;
     use sui::epoch_time_lock::EpochTimeLock;
     use std::option::Option;
-    use sui::crypto::Self;
+    use sui::ed25519::Self;
 
     friend sui::genesis;
     friend sui::sui_system;
@@ -92,7 +92,7 @@ module sui::validator {
         let address_bytes = bcs::to_bytes(&sui_address);
         vector::append(&mut signed_bytes, address_bytes);
         assert!(
-            crypto::ed25519_verify_with_domain(proof_of_possession, pubkey_bytes, signed_bytes, PROOF_OF_POSSESSION_DOMAIN) == true,
+            ed25519::ed25519_verify_with_domain(proof_of_possession, pubkey_bytes, signed_bytes, PROOF_OF_POSSESSION_DOMAIN) == true,
             0
         );
         // assert!(
