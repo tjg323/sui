@@ -7823,6 +7823,8 @@ name = "sui-simulator"
 version = "0.7.0"
 dependencies = [
  "msim",
+ "sui-framework",
+ "telemetry-subscribers",
  "workspace-hack 0.1.0",
 ]
 

@@ -4,6 +4,10 @@
 #[cfg(msim)]
 pub use msim::*;
 
+// Re-export things used by sui-macros
+pub use sui_framework;
+pub use telemetry_subscribers;
+
 #[cfg(msim)]
 pub mod configs {
     use msim::*;
