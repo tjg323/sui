@@ -7,21 +7,16 @@ use futures::future::try_join_all;
 use futures::StreamExt;
 use prometheus::Registry;
 use rand::seq::SliceRandom;
-use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 use strum_macros::EnumString;
 use sui_benchmark::drivers::bench_driver::BenchDriver;
 use sui_benchmark::drivers::driver::Driver;
-use sui_benchmark::workloads::shared_counter::SharedCounterWorkload;
-use sui_benchmark::workloads::transfer_object::TransferObjectWorkload;
 use sui_benchmark::workloads::workload::get_latest;
-use sui_benchmark::workloads::workload::CombinationWorkload;
-use sui_benchmark::workloads::workload::Payload;
-use sui_benchmark::workloads::workload::Workload;
-use sui_benchmark::workloads::workload::WorkloadInfo;
-use sui_benchmark::workloads::workload::WorkloadType;
+use sui_benchmark::workloads::{
+    make_combination_workload, make_shared_counter_workload, make_transfer_object_workload,
+};
 use sui_config::gateway::GatewayConfig;
 use sui_config::Config;
 use sui_config::PersistedConfig;
@@ -205,127 +200,34 @@ pub async fn follow(authority_client: NetworkAuthorityClient, download_txes: boo
     });
 }
 
-fn make_combination_workload(
-    target_qps: u64,
-    num_workers: u64,
-    in_flight_ratio: u64,
-    primary_gas_id: ObjectID,
-    primary_gas_account_owner: SuiAddress,
-    primary_gas_account_keypair: Arc<AccountKeyPair>,
-    opts: &Opts,
-) -> WorkloadInfo {
-    let mut workloads = HashMap::<WorkloadType, (u32, Box<dyn Workload<dyn Payload>>)>::new();
-    match opts.run_spec {
-        RunSpec::Bench {
-            shared_counter,
-            transfer_object,
-            ..
-        } => {
-            if shared_counter > 0 {
-                let workload = SharedCounterWorkload::new_boxed(
-                    primary_gas_id,
-                    primary_gas_account_owner,
-                    primary_gas_account_keypair.clone(),
-                    None,
-                );
-                workloads
-                    .entry(WorkloadType::SharedCounter)
-                    .or_insert((shared_counter, workload));
-            }
-            if transfer_object > 0 {
-                let workload = TransferObjectWorkload::new_boxed(
-                    opts.num_transfer_accounts,
-                    primary_gas_id,
-                    primary_gas_account_owner,
-                    primary_gas_account_keypair,
-                );
-                workloads
-                    .entry(WorkloadType::TransferObject)
-                    .or_insert((transfer_object, workload));
-            }
-        }
-    }
-    let workload = CombinationWorkload::new_boxed(workloads);
-    WorkloadInfo {
-        target_qps,
-        num_workers,
-        max_in_flight_ops: in_flight_ratio * target_qps,
-        workload,
-    }
-}
-
-fn make_shared_counter_workload(
-    target_qps: u64,
-    num_workers: u64,
-    max_in_flight_ops: u64,
-    primary_gas_id: ObjectID,
-    owner: SuiAddress,
-    keypair: Arc<AccountKeyPair>,
-) -> Option<WorkloadInfo> {
-    if target_qps == 0 || max_in_flight_ops == 0 || num_workers == 0 {
-        None
-    } else {
-        let workload = SharedCounterWorkload::new_boxed(primary_gas_id, owner, keypair, None);
-        Some(WorkloadInfo {
-            target_qps,
-            num_workers,
-            max_in_flight_ops,
-            workload,
-        })
-    }
-}
-
-fn make_transfer_object_workload(
-    target_qps: u64,
-    num_workers: u64,
-    max_in_flight_ops: u64,
-    num_transfer_accounts: u64,
-    primary_gas_id: &ObjectID,
-    owner: SuiAddress,
-    keypair: Arc<AccountKeyPair>,
-) -> Option<WorkloadInfo> {
-    if target_qps == 0 || max_in_flight_ops == 0 || num_workers == 0 {
-        None
-    } else {
-        let workload = TransferObjectWorkload::new_boxed(
-            num_transfer_accounts,
-            *primary_gas_id,
-            owner,
-            keypair,
-        );
-        Some(WorkloadInfo {
-            target_qps,
-            num_workers,
-            max_in_flight_ops,
-            workload,
-        })
-    }
-}
-
 /// To spin up a local cluster and direct some load
 /// at it with 50/50 shared and owned traffic, use
 /// it something like:
-/// ```cargo run  --release  --package sui-benchmark
-/// --bin stress -- --num-client-threads 12 \
-/// --num-server-threads 10 \
-/// --num-transfer-accounts 2 \
-/// bench \
-/// --target-qps 20 \
-/// --in-flight-ratio 2 \
-/// --shared-counter 10 \
-/// --transfer-object 10```
+///
+///     cargo run  --release  --package sui-benchmark
+///     --bin stress -- --num-client-threads 12 \
+///     --num-server-threads 10 \
+///     --num-transfer-accounts 2 \
+///     bench \
+///     --target-qps 20 \
+///     --in-flight-ratio 2 \
+///     --shared-counter 10 \
+///     --transfer-object 10
+///
 /// To point the traffic to an already running cluster,
 /// use it something like:
-/// ```cargo run  --release  --package sui-benchmark --bin stress -- --num-client-threads 12 \
-/// --num-server-threads 10 \
-/// --num-transfer-accounts 2 \
-/// --primary-gas-id 0x59931dcac57ba20d75321acaf55e8eb5a2c47e9f \
-/// --gateway-config-path /tmp/gateway.yaml \
-/// --keystore-path /tmp/sui.keystore bench \
-/// --target-qps 1 \
-/// --in-flight-ratio 2 \
-/// --shared-counter 10 \
-/// --transfer-object 10```
+///
+///     cargo run  --release  --package sui-benchmark --bin stress -- --num-client-threads 12 \
+///     --num-server-threads 10 \
+///     --num-transfer-accounts 2 \
+///     --primary-gas-id 0x59931dcac57ba20d75321acaf55e8eb5a2c47e9f \
+///     --gateway-config-path /tmp/gateway.yaml \
+///     --keystore-path /tmp/sui.keystore bench \
+///     --target-qps 1 \
+///     --in-flight-ratio 2 \
+///     --shared-counter 10 \
+///     --transfer-object 10
+///
 #[tokio::main]
 async fn main() -> Result<()> {
     let mut config = telemetry_subscribers::TelemetryConfig::new("stress");
@@ -528,7 +430,9 @@ async fn main() -> Result<()> {
                             primary_gas_id,
                             owner,
                             keypair,
-                            &opts,
+                            opts.num_transfer_accounts,
+                            shared_counter,
+                            transfer_object,
                         );
                         combination_workload.workload.init(&aggregator).await;
                         vec![combination_workload]
