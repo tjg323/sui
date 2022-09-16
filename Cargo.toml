@@ -56,3 +56,7 @@ debug-assertions = true
 overflow-checks = true
 # opt-level 1 gives >5x speedup for simulator tests without slowing down build times very much.
 opt-level = 1
+
+[patch.'https://github.com/MystenLabs/mysten-sim.git']
+msim = { path = "/Users/mlogan/dev/mysten-sim/msim" }
+msim-macros = { path = "/Users/mlogan/dev/mysten-sim/msim-macros" }

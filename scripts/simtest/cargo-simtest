@@ -49,10 +49,11 @@ if [ "$1" = "build" ]; then
   CARGO_COMMAND=(build --profile simulator)
 fi
 
+# --config 'patch.crates-io.tokio.git = "https://github.com/MystenLabs/mysten-sim.git"' \
+# --config 'patch.crates-io.tokio.rev = "979cac9493d71aa14310c16f10230a4ea6b819b1"' \
 cargo ${CARGO_COMMAND[@]} \
   --config 'build.rustflags = ["--cfg", "msim"]' \
-  --config 'patch.crates-io.tokio.git = "https://github.com/MystenLabs/mysten-sim.git"' \
-  --config 'patch.crates-io.tokio.rev = "979cac9493d71aa14310c16f10230a4ea6b819b1"' \
+  --config 'patch.crates-io.tokio.path = "/Users/mlogan/dev/mysten-sim/msim-tokio"' \
   --config 'patch.crates-io.hyper.git = "https://github.com/mystenmark/hyper-madsim-fork.git"' \
   --config 'patch.crates-io.hyper.rev = "2b2eca1e983376294c84c93385ebe848ccf9a99f"' \
   "$@"
